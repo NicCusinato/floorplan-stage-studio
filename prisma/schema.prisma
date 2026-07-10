@@ -1,0 +1,120 @@
+// Prisma Schema for FloorPlan Stage Studio
+// Database: SQLite (single-user staging business)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Client (the stager's customers) ───────────────────────────────────────────
+
+model Client {
+  id        String    @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  company   String?
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+}
+
+// ─── Project (one staging job = one floor plan) ────────────────────────────────
+
+model Project {
+  id          String    @id @default(cuid())
+  clientId    String?
+  title       String
+  description String?
+  status      String    @default("created")
+  // created | uploading | converting | rendering | staging | complete | failed
+  roomType    String?
+  designStyle String?
+  prompt      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  client      Client?             @relation(fields: [clientId], references: [id])
+  assets      UploadedAsset[]
+  extractions FloorplanExtraction[]
+  renderViews RenderView[]
+  jobs        GenerationJob[]
+}
+
+// ─── Uploaded Assets (images, files, geometry, scenes) ─────────────────────────
+
+model UploadedAsset {
+  id        String  @id @default(cuid())
+  projectId String
+  type      String
+  // floorplan | preprocessed | render_base | render_staged | render_upscaled
+  // | thumbnail | geometry | scene | other
+  path      String
+  filename  String?
+  mimeType  String?
+  sizeBytes Int?
+  metadata  String? // JSON blob
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// ─── Floor Plan Extraction (geometry from floor plan image) ────────────────────
+
+model FloorplanExtraction {
+  id               String  @id @default(cuid())
+  projectId        String
+  rawImagePath     String
+  extractedWalls   String? // JSON: [{x1,y1,x2,y2,thickness}]
+  extractedDoors   String? // JSON: [{x,y,width,type}]
+  extractedWindows String? // JSON: [{x,y,width,height}]
+  dimensions       String? // JSON: {width,height,ceilingHeight,scale}
+  confidence       Float?
+  editableJson     String? // Full editable geometry JSON for user tweaks
+  createdAt        DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// ─── Render Views (camera angles + generated images) ───────────────────────────
+
+model RenderView {
+  id               String  @id @default(cuid())
+  projectId        String
+  cameraName       String  // hero_corner | opposite_corner | front_center | wide_room | detail
+  cameraParams     String? // JSON: {position, rotation, fov, near, far}
+  baseRenderPath   String? // Clean Blender render (neutral)
+  stagedRenderPath String? // AI-staged version
+  thumbnailPath    String?
+  sortOrder        Int     @default(0)
+  createdAt        DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// ─── Generation Jobs (track all async work) ────────────────────────────────────
+
+model GenerationJob {
+  id           String    @id @default(cuid())
+  projectId    String
+  type         String    // convert | render | stage | upscale | analyze
+  status       String    @default("pending")
+  // pending | queued | running | complete | failed | cancelled
+  provider     String?   // openai | gemini | flux | claude | blender | floorplan
+  inputJson    String?   // JSON: request parameters
+  outputJson   String?   // JSON: result metadata
+  errorMessage String?
+  costEstimate Float?    // Estimated cost in USD
+  actualCost   Float?    // Actual cost after completion
+  retryCount   Int       @default(0)
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
