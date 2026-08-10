@@ -15,7 +15,7 @@ const genAI = process.env.GEMINI_API_KEY
 async function translateObjectEditPrompt(roomName: string, userCommand: string): Promise<string> {
   if (!genAI) return userCommand;
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-3.5-flash" });
     const prompt = `You are an expert AI prompt engineer for architectural real estate staging photography.
 A user wants to edit an object in a photo of a ${roomName} with the command: "${userCommand}".
 Diffusion image models FAIL on negative instructions (e.g. saying "remove grey chair" causes the model to draw a grey chair because the token 'grey chair' is in the prompt).

@@ -42,7 +42,7 @@ export async function POST(
     const mimeType = (floorplanAsset.mimeType || "image/jpeg") as string;
 
     // Call Gemini Vision to analyze the floorplan
-    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-3.5-flash" });
 
     const prompt = `You are an expert architect analyzing a floor plan image.
 

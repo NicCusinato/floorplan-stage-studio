@@ -27,7 +27,7 @@ async function analyzeFloorPlan(imagePath: string): Promise<{
   const base64Image = imageData.toString("base64");
   const mimeType = imagePath.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
 
-  const visionModel = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+  const visionModel = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-3.5-flash" });
 
   const prompt = `You are analyzing a real estate floor plan image.
 
