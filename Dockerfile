@@ -27,6 +27,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV DATABASE_URL="file:/app/storage/dev.db"
 ENV STORAGE_PATH="/app/storage"
+ENV HOSTNAME="0.0.0.0"
 # Install OpenSSL 3.x (matches linux-musl-openssl-3.0.x binary target)
 RUN apk add --no-cache openssl libssl3
 COPY --from=builder /app/.next/standalone .
