@@ -2,7 +2,8 @@
 // Database: SQLite (single-user staging business)
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"]
 }
 
 datasource db {
@@ -32,10 +33,11 @@ model Project {
   title       String
   description String?
   status      String    @default("created")
-  // created | uploading | converting | rendering | staging | complete | failed
+  // created | uploading | analyzing | staging | complete | failed
   roomType    String?
   designStyle String?
   prompt      String?
+  roomStateJson String? // JSON: full room analysis + style state per room
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -58,7 +60,8 @@ model UploadedAsset {
   filename  String?
   mimeType  String?
   sizeBytes Int?
-  metadata  String? // JSON blob
+  roomName  String?  // e.g. "BEDROOM", "KITCHEN" — which room this asset belongs to
+  metadata  String?  // JSON blob
   createdAt DateTime @default(now())
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)

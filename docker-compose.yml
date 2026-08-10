@@ -1,0 +1,16 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=file:/app/storage/dev.db
+      - STORAGE_PATH=/app/storage
+      - FAL_KEY=${FAL_KEY}
+    volumes:
+      - ./storage:/app/storage
