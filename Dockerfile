@@ -7,6 +7,7 @@ RUN npm install
 
 FROM base AS builder
 WORKDIR /app
+ENV DATABASE_URL="file:/app/storage/dev.db"
 COPY --from=deps /app/node_modules ./node_modules
 COPY src ./src
 COPY public ./public
@@ -24,6 +25,8 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+ENV DATABASE_URL="file:/app/storage/dev.db"
+ENV STORAGE_PATH="/app/storage"
 # Install OpenSSL 3.x (matches linux-musl-openssl-3.0.x binary target)
 RUN apk add --no-cache openssl libssl3
 COPY --from=builder /app/.next/standalone .
