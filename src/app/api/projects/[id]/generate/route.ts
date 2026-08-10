@@ -43,6 +43,7 @@ For each room, extract:
 - appliance_layout: For rooms like kitchens or laundry, define appliance positions relative to a person standing at the entry doorway looking into the room (e.g., "Stacked washer and dryer in cubby immediately to the left upon entering; refrigerator along the right-hand wall"). Never use compass directions (North, South, East, West).
 - fixed_fixtures_layout: For any room with permanent architectural fixtures (toilets, vanities, bathtubs, kitchen cabinets, islands, stoves, refrigerators, stacked washer/dryer, fireplaces, stairs), identify their exact positions relative to a person standing at the entry doorway looking into the room. Example: "Toilet immediately to the right upon entering; vanity sink along the left-hand wall; shower alcove straight ahead on the far wall". Never use compass directions.
 - adjacent_openings: Identify any open doorways, archways, or open-concept connections to adjacent rooms relative to the doorway perspective (e.g., "Open archway to the left leading into LIVING ROOM; open counter straight ahead looking into DINING AREA").
+- visible_adjacent_context: If there are adjacent openings, describe what specifically should be visible through them to maintain strict visual consistency across the entire house (e.g. "Through the left archway, show a modern grey sofa and oak hardwood floor in the living room").
 - CAMERA-RELATIVE SPATIAL RULE: Always describe positions (left wall, right wall, straight ahead, immediate left upon entering) relative to a person standing at the entry door looking into the room. NEVER use compass directions (North, South, East, West) because image models cannot compute compass rotations.
 
 The floor plan may include:
@@ -52,7 +53,7 @@ The floor plan may include:
 - Dimensions in feet or meters
 
 Return ONLY valid JSON with no markdown, no code blocks, no explanation:
-{"totalSqft":840,"rooms":[{"name":"BEDROOM","sqft":171,"features":["window","closet","bed"],"spatial_layout":"Square room with window on north wall","furniture_scale":"Medium room, fits Queen bed","camera_alignment":"Camera positioned at East door looking West","appliance_layout":"","fixed_fixtures_layout":"","adjacent_openings":""}]}`;
+{"totalSqft":840,"global_style_narrative":"A cohesive design summary of the entire house...","rooms":[{"name":"BEDROOM","sqft":171,"features":["window","closet","bed"],"spatial_layout":"Square room with window on north wall","furniture_scale":"Medium room, fits Queen bed","camera_alignment":"Camera positioned at East door looking West","appliance_layout":"","fixed_fixtures_layout":"","adjacent_openings":"","visible_adjacent_context":""}]}`;
 
   const result = await visionModel.generateContent([
     prompt,
@@ -121,7 +122,7 @@ async function processGeneration(
           camera_alignment: r.camera_alignment || "",
           appliance_layout: r.appliance_layout || "",
           fixed_fixtures_layout: r.fixed_fixtures_layout || r.appliance_layout || "",
-          adjacent_openings: r.adjacent_openings || "",
+          adjacent_openings: (r.adjacent_openings || "") + (r.visible_adjacent_context ? ` Context: ${r.visible_adjacent_context}` : ""),
           style: defaultStyle,
           wallColor: defaultWallColor,
           floorMaterial: r.floor_material || defaultFloor,

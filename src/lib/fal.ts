@@ -21,8 +21,8 @@ A user wants to edit an object in a photo of a ${roomName} with the command: "${
 Diffusion image models FAIL on negative instructions (e.g. saying "remove grey chair" causes the model to draw a grey chair because the token 'grey chair' is in the prompt).
 Translate the user's command into a POSITIVE visual scene description for an image-to-image AI model:
 1. If removing an object (e.g., "remove grey chair", "remove plant"): Describe the area with that object GONE as open, clean space (e.g. "An open, uncluttered right corner next to the bed showing clear hardwood flooring and clean wall space. Empty corner, spacious walkway, no seating."). NEVER mention the removed object's name.
-2. If replacing an object (e.g., "replace armchair with desk"): Describe the new object in its place clearly and concisely.
-3. Keep the output under 30 words. Return ONLY the translated positive scene description string, nothing else.`;
+2. If replacing an object (e.g., "replace armchair with desk"): Describe the new object in its place clearly and concisely with strong descriptive words.
+3. Keep the output under 30 words. Return ONLY the translated positive scene description string, nothing else. Make it a direct, forceful assertion of the new state.`;
 
     const res = await model.generateContent(prompt);
     const text = res.response.text()?.trim();
@@ -94,8 +94,8 @@ function buildRoomPrompt(
     anglePrompt,
     constraints,
     `Tasteful, move-in ready furniture. Strictly minimal decor. Do NOT over-decorate with potted plants or excessive greenery. Keep surfaces clean.`,
-    `Photorealistic DSLR real estate photography, 4K, no people, no text, no watermarks.`,
-    `Sharp, clean, professionally staged, magazine quality.`,
+    `Logical architectural staging, realistic interior photography, highly coherent spatial layout, photorealistic DSLR.`,
+    `Sharp, clean, professionally staged, realistic textures.`,
   ].filter(Boolean).join(" ");
 }
 
@@ -247,15 +247,15 @@ export async function editRoomPhoto(
           : [
               `Real estate staging photo of a ${roomName.toLowerCase()}.`,
               `Complete interior design style makeover to: ${translatedPrompt}. Transform all furniture materials, upholstery, wood tones, textiles, rugs, and lighting fixtures to fully embody this style aesthetic.`,
-              `CRITICAL GEOMETRY CONSTRAINT: Maintain the exact same camera angle, architectural walls, doors, windows, and unmovable architectural fixtures. Only transform the interior styling, decor, and furniture materials.`,
-              `Photorealistic DSLR professional interior photography quality. 4K, no people, no text.`,
+              `CRITICAL GEOMETRY CONSTRAINT: Maintain the exact same camera angle, architectural walls, doors, windows, and unmovable architectural fixtures. Completely replace and restyle all furniture and decor.`,
+              `Logical architectural staging, realistic interior photography, photorealistic DSLR.`,
             ].join(" ");
 
         result = await fal.run(MODEL_EDIT_RESTYLE, {
           input: {
             image_url: uploadedUrl,
             prompt: prompt,
-            strength: isObjectEdit ? 0.58 : 0.62,
+            strength: isObjectEdit ? 0.75 : 0.90,
             num_inference_steps: 28,
           } as any,
         });

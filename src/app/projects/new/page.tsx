@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ProviderStatus, StagingProvider, RoomType, DesignStyle, ROOM_TYPE_META } from "@/lib/staging/types";
+import { ProviderStatus, StagingProvider, DesignStyle } from "@/lib/staging/types";
 import { ProviderPicker } from "@/components/ProviderPicker";
 import { StyleGrid } from "@/components/StyleGrid";
 import { ArrowRight, Image as ImageIcon, Check, Loader2 } from "lucide-react";
@@ -12,7 +12,6 @@ export default function NewProject() {
   
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
-  const [roomType, setRoomType] = useState<RoomType>("LIVINGROOM");
   const [designStyle, setDesignStyle] = useState<DesignStyle>("MODERN");
   const [provider, setProvider] = useState<StagingProvider>("gemini");
   const [providers, setProviders] = useState<ProviderStatus[]>([]);
@@ -44,7 +43,7 @@ export default function NewProject() {
       const projRes = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, roomType, designStyle }),
+        body: JSON.stringify({ title, designStyle }),
       });
       const project = await projRes.json();
       
@@ -93,19 +92,6 @@ export default function NewProject() {
                 placeholder="e.g. 123 Main St - Master Bedroom"
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Room Type</label>
-              <select 
-                value={roomType}
-                onChange={e => setRoomType(e.target.value as RoomType)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-              >
-                {Object.entries(ROOM_TYPE_META).map(([key, meta]) => (
-                  <option key={key} value={key}>{meta.emoji} {meta.label}</option>
-                ))}
-              </select>
             </div>
           </div>
         )}

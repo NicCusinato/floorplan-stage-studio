@@ -21,7 +21,6 @@ export async function POST(request: Request) {
         title: data.title,
         description: data.description,
         clientId: data.clientId,
-        roomType: data.roomType,
         designStyle: data.designStyle,
       },
     });

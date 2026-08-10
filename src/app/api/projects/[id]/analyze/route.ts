@@ -59,12 +59,14 @@ For each room/space, return:
 - appliance_layout: For rooms like kitchens or laundry, define appliance positions relative to a person standing at the entry doorway looking into the room (e.g., "Stacked washer and dryer in cubby immediately to the left upon entering; refrigerator along the right-hand wall"). Never use compass directions (North, South, East, West).
 - fixed_fixtures_layout: For any room with permanent architectural fixtures (toilets, vanities, bathtubs, kitchen cabinets, islands, stoves, refrigerators, stacked washer/dryer, fireplaces, stairs), identify their exact positions relative to a person standing at the entry doorway looking into the room. Example: "Toilet immediately to the right upon entering; vanity sink along the left-hand wall; shower alcove straight ahead on the far wall". Never use compass directions.
 - adjacent_openings: Identify any open doorways, archways, or open-concept connections to adjacent rooms relative to the doorway perspective (e.g., "Open archway to the left leading into LIVING ROOM; open counter straight ahead looking into DINING AREA").
+- visible_adjacent_context: If there are adjacent openings, describe what specifically should be visible through them to maintain strict visual consistency across the entire house (e.g. "Through the left archway, show a modern grey sofa and oak hardwood floor in the living room").
 - floor_material: Carefully inspect the visual flooring pattern and texture drawn inside this specific room on the floorplan image. Determine the exact floor material shown (e.g., "light oak hardwood plank", "plush grey carpet", "beige carpet", "light marble stone tile", "ceramic floor tile", "polished concrete", "terracotta tile", "travertine outdoor patio pavers"). Specify the exact floor material for this room.
 - CAMERA-RELATIVE SPATIAL RULE: Always describe positions (left wall, right wall, straight ahead, immediate left upon entering) relative to a person standing at the entry door looking into the room. NEVER use compass directions (North, South, East, West) because image models cannot compute compass rotations.
 
 Return ONLY a JSON object with this exact structure, no markdown, no explanation:
 {
   "totalSqft": 840,
+  "global_style_narrative": "A cohesive design summary of the entire house to ensure all rooms match stylistically.",
   "rooms": [
     {
       "name": "BEDROOM",
@@ -77,6 +79,7 @@ Return ONLY a JSON object with this exact structure, no markdown, no explanation
       "appliance_layout": "",
       "fixed_fixtures_layout": "",
       "adjacent_openings": "",
+      "visible_adjacent_context": "Through the East door, show the hallway with oak flooring.",
       "floor_material": "grey plush carpet"
     }
   ]
