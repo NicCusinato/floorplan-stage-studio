@@ -113,7 +113,7 @@ export class OpenAIProvider extends BaseStagingProvider {
             prompt: prompt,
             n: numImages,
             size: size,
-            quality: quality === "high" ? "hd" : "standard",
+            quality: quality === "low" ? "low" : quality === "high" ? "high" : "medium",
           }),
         });
 

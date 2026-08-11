@@ -91,7 +91,7 @@ export class GeminiProvider extends BaseStagingProvider {
       }
 
       // Use Gemini's generateContent with image generation enabled
-      const model = "gemini-2.0-flash-exp"; // Supports image generation
+      const model = "gemini-3.1-flash-image"; // Supports image generation in this environment
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
       const response = await fetch(url, {
@@ -191,7 +191,7 @@ export class GeminiProvider extends BaseStagingProvider {
 
     try {
       const base64 = imageBuffer.toString("base64");
-      const model = "gemini-2.0-flash-exp";
+      const model = process.env.GEMINI_MODEL || "gemini-3.5-flash";
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
       const response = await fetch(url, {
