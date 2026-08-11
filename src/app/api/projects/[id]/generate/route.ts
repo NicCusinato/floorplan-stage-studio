@@ -150,8 +150,9 @@ async function processGeneration(
       (r: any) => !SKIP_ROOMS.has(r.name.toUpperCase().trim())
     );
 
+    const providerName = project?.provider || "openai";
     console.log(
-      `[generate] Generating ${stageableRooms.length} rooms in ${mode} mode via fal.ai`
+      `[generate] Generating ${stageableRooms.length} rooms in ${mode} mode via ${providerName}`
     );
 
     let lastError: string | null = null;
@@ -177,7 +178,6 @@ async function processGeneration(
         );
 
         const engine = getStagingEngine();
-        const providerName = (project?.provider || "openai") as any;
 
         const stageResult = await engine.stageRoomWithFallback({
           mode: "stage_empty",
