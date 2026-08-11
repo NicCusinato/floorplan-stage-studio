@@ -194,6 +194,8 @@ class StagingEngine {
     const result = await this.stageRoom(request);
     if (result.success) return result;
 
+    console.error(`[StagingEngine] Primary provider ${request.provider} failed:`, result.error);
+
     // If it failed, try other providers
     const fallbackOrder: StagingProvider[] = ["gemini", "openai", "flux"];
     for (const providerName of fallbackOrder) {
@@ -214,6 +216,8 @@ class StagingEngine {
       if (fallbackResult.success) {
         fallbackResult.metadata.fallbackFrom = request.provider;
         return fallbackResult;
+      } else {
+        console.error(`[StagingEngine] Fallback provider ${providerName} failed:`, fallbackResult.error);
       }
     }
 
