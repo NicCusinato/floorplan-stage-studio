@@ -173,7 +173,7 @@ async function processGeneration(
           room.name, room.sqft, room.features,
           room.style, room.wallColor, room.floorMaterial, room.cameraAngle,
           room.spatial_layout, room.furniture_scale, room.camera_alignment, room.appliance_layout,
-          room.adjacent_openings, room.fixed_fixtures_layout, projectSeed
+          room.adjacent_openings, room.fixed_fixtures_layout
         );
 
         const engine = getStagingEngine();
