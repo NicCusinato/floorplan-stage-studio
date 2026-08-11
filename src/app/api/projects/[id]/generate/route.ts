@@ -181,7 +181,7 @@ async function processGeneration(
 
         const stageResult = await engine.stageRoomWithFallback({
           mode: "stage_empty",
-          provider: providerName,
+          provider: providerName as any,
           inputImagePath: "", // from scratch
           roomType: "LIVINGROOM" as any, // Not strictly needed because we pass the custom prompt
           designStyle: "MODERN" as any,
