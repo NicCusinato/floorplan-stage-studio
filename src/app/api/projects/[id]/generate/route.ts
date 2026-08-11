@@ -6,7 +6,9 @@ import {
   generateRoomPhotoQuality,
   FAL_AVAILABLE,
   SKIP_ROOMS,
+  buildRoomPrompt,
 } from "@/lib/fal";
+import { getStagingEngine } from "@/lib/staging/engine";
 import fs from "fs";
 import path from "path";
 
@@ -87,7 +89,8 @@ async function processGeneration(
       data: { status: "running" },
     });
 
-    if (!FAL_AVAILABLE) throw new Error("FAL_KEY not set — add it to .env to generate photos");
+    // We no longer strictly require FAL_KEY if using OpenAI
+    // if (!FAL_AVAILABLE) throw new Error("FAL_KEY not set — add it to .env to generate photos");
 
     // ── Step 1 & 2: Analyze floor plan or use existing state ─────────────────
     let roomState: any;
@@ -166,20 +169,39 @@ async function processGeneration(
       console.log(`[generate] → ${room.name} (${room.sqft} sqft)`);
 
       try {
-        const imgBuffer =
-          mode === "preview"
-            ? await generateRoomPhotoPreview(
-                room.name, room.sqft, room.features,
-                room.style, room.wallColor, room.floorMaterial, room.cameraAngle,
-                room.spatial_layout, room.furniture_scale, room.camera_alignment, room.appliance_layout,
-                room.adjacent_openings, room.fixed_fixtures_layout, projectSeed
-              )
-            : await generateRoomPhotoQuality(
-                room.name, room.sqft, room.features,
-                room.style, room.wallColor, room.floorMaterial, room.cameraAngle,
-                room.spatial_layout, room.furniture_scale, room.camera_alignment, room.appliance_layout,
-                room.adjacent_openings, room.fixed_fixtures_layout, projectSeed
-              );
+        const prompt = buildRoomPrompt(
+          room.name, room.sqft, room.features,
+          room.style, room.wallColor, room.floorMaterial, room.cameraAngle,
+          room.spatial_layout, room.furniture_scale, room.camera_alignment, room.appliance_layout,
+          room.adjacent_openings, room.fixed_fixtures_layout, projectSeed
+        );
+
+        const engine = getStagingEngine();
+        const providerName = (project?.provider || "openai") as any;
+
+        const stageResult = await engine.stageRoomWithFallback({
+          mode: "stage_empty",
+          provider: providerName,
+          inputImagePath: "", // from scratch
+          roomType: "LIVINGROOM" as any, // Not strictly needed because we pass the custom prompt
+          designStyle: "MODERN" as any,
+          prompt: prompt,
+          numImages: 1,
+          quality: mode === "quality" ? "high" : "low",
+        });
+
+        if (!stageResult.success || stageResult.images.length === 0) {
+           throw new Error(stageResult.error || "No image returned from AI provider");
+        }
+
+        const imgData = stageResult.images[0];
+        let imgBuffer: Buffer | null = null;
+        if (imgData.base64) {
+          imgBuffer = Buffer.from(imgData.base64, "base64");
+        } else if (imgData.url) {
+          const dlRes = await fetch(imgData.url);
+          imgBuffer = Buffer.from(await dlRes.arrayBuffer());
+        }
 
         if (!imgBuffer) {
           console.warn(`[generate] No image returned for ${room.name}, skipping`);
@@ -262,12 +284,12 @@ export async function POST(
     // mode: "preview" (fast, Schnell) or "quality" (best, Flux Pro)
     const mode: "preview" | "quality" = body.mode === "quality" ? "quality" : "preview";
 
-    if (!FAL_AVAILABLE) {
+    if (!process.env.OPENAI_API_KEY && !FAL_AVAILABLE) {
       return NextResponse.json(
         {
-          error: "FAL_KEY not configured",
-          hint: "Add your fal.ai API key to FAL_KEY= in the .env file, then restart Docker.",
-          getKey: "https://fal.ai/dashboard",
+          error: "No AI Provider Configured",
+          hint: "Add OPENAI_API_KEY or FAL_KEY to your .env file, then restart Docker.",
+          getKey: "https://platform.openai.com/api-keys",
         },
         { status: 503 }
       );
@@ -291,7 +313,7 @@ export async function POST(
         projectId: id,
         type: "stage",
         status: "pending",
-        provider: `fal-ai-flux-${mode}`,
+        provider: project.provider || "openai",
       },
     });
 

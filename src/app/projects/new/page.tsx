@@ -43,7 +43,7 @@ export default function NewProject() {
       const projRes = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, designStyle }),
+        body: JSON.stringify({ title, designStyle, provider }),
       });
       const project = await projRes.json();
       

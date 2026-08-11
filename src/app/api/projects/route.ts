@@ -22,6 +22,7 @@ export async function POST(request: Request) {
         description: data.description,
         clientId: data.clientId,
         designStyle: data.designStyle,
+        provider: data.provider,
       },
     });
     return NextResponse.json(project);

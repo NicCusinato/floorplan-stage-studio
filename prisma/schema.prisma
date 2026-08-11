@@ -36,6 +36,7 @@ model Project {
   // created | uploading | analyzing | staging | complete | failed
   roomType    String?
   designStyle String?
+  provider    String?   @default("openai")
   prompt      String?
   roomStateJson String? // JSON: full room analysis + style state per room
   createdAt   DateTime  @default(now())

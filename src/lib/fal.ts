@@ -47,7 +47,7 @@ export const SKIP_ROOMS = new Set([
 ]);
 
 // ── Prompt builder ────────────────────────────────────────────────────────────
-function buildRoomPrompt(
+export function buildRoomPrompt(
   roomName: string,
   sqft: number,
   features: string[],

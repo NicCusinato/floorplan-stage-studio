@@ -86,7 +86,7 @@ export class OpenAIProvider extends BaseStagingProvider {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "gpt-image-1",
+            model: "dall-e-3",
             image: base64Image,
             prompt: prompt,
             n: numImages,
@@ -109,7 +109,7 @@ export class OpenAIProvider extends BaseStagingProvider {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "gpt-image-1",
+            model: "dall-e-3",
             prompt: prompt,
             n: numImages,
             size: size,
@@ -140,7 +140,7 @@ export class OpenAIProvider extends BaseStagingProvider {
       const totalCost = costPerImage * images.length;
 
       return this.successResult(images, totalCost, Date.now() - startTime, {
-        model: "gpt-image-1",
+        model: "dall-e-3",
         quality,
         size,
         promptUsed: prompt,
