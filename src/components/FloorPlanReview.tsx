@@ -106,7 +106,7 @@ export function FloorPlanReview({ projectId, floorplanAssetId, existingAnalysis 
 
       if (res.status === 503) {
         alert(
-          `⚠️ fal.ai API key not set.\n\n1. Go to https://fal.ai/dashboard → API Keys\n2. Open .env and paste as FAL_KEY="key_xxx"\n3. Restart Docker`
+          `⚠️ AI Provider API key not set.\n\n1. Check your .env file and ensure OPENAI_API_KEY (or FAL_KEY) is set.\n2. Restart Docker`
         );
         return;
       }

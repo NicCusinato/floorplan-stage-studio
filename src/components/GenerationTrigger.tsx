@@ -32,7 +32,7 @@ export function GenerationTrigger({ projectId, hasFloorplan, compact = false }: 
       } else if (res.status === 503) {
         // FAL_KEY not configured
         alert(
-          `⚠️ fal.ai API key not set.\n\nTo fix:\n1. Go to https://fal.ai/dashboard and create an API key\n2. Open the .env file and paste it as FAL_KEY="your_key"\n3. Restart Docker`
+          `⚠️ AI Provider API key not set.\n\nTo fix:\n1. Check your .env file and ensure OPENAI_API_KEY (or FAL_KEY) is set.\n2. Restart Docker.`
         );
       } else {
         alert(`Error: ${data.error || "Generation failed"}`);
@@ -80,7 +80,7 @@ export function GenerationTrigger({ projectId, hasFloorplan, compact = false }: 
         {hasFloorplan ? (
           <p className="text-zinc-400 text-sm max-w-md mx-auto">
             Gemini Vision will read your floor plan and identify every room. 
-            Then fal.ai FLUX will generate a photorealistic staged photo for each room.
+            Then the selected AI Provider will generate a photorealistic staged photo for each room.
           </p>
         ) : (
           <p className="text-zinc-400 text-sm max-w-md mx-auto">
@@ -132,7 +132,7 @@ export function GenerationTrigger({ projectId, hasFloorplan, compact = false }: 
                 <><Star className="w-5 h-5" /> High Quality</>
               )}
             </button>
-            <span className="text-xs text-zinc-500">~20s per room · FLUX Pro</span>
+            <span className="text-xs text-zinc-500">~20s per room · AI</span>
           </div>
         </div>
       )}
@@ -140,8 +140,8 @@ export function GenerationTrigger({ projectId, hasFloorplan, compact = false }: 
       {isLoading && (
         <p className="text-xs text-blue-400/70 animate-pulse">
           {isLoading === "preview"
-            ? "Gemini is reading your floor plan… fal.ai Schnell is generating quick previews."
-            : "Gemini is reading your floor plan… fal.ai FLUX Pro is generating high-quality photos."}
+            ? `Gemini is reading your floor plan… AI is generating quick previews.`
+            : `Gemini is reading your floor plan… AI is generating high-quality photos.`}
           {" "}Page will update automatically.
         </p>
       )}

@@ -157,10 +157,9 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
                   <RefreshCw className="w-6 h-6 text-blue-400 animate-spin" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-300 mb-1">fal.ai FLUX is staging your rooms…</h3>
+                  <h3 className="font-semibold text-blue-300 mb-1">{project.provider === 'openai' ? 'OpenAI DALL-E 3' : 'fal.ai FLUX'} is staging your rooms…</h3>
                   <p className="text-sm text-blue-400/70">
                     Generating photorealistic photos for each room.
-                    Quick preview: ~3s/room · High quality: ~20s/room.
                     This page will refresh automatically when done.
                   </p>
                 </div>
@@ -177,15 +176,15 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
                   <h3 className="font-semibold text-red-300 mb-1">Generation failed</h3>
                   {latestJob.errorMessage?.includes("Exhausted balance") || latestJob.errorMessage?.includes("balance") ? (
                     <div className="space-y-2">
-                      <p className="text-sm text-red-400/80">Your fal.ai account has run out of credits.</p>
+                      <p className="text-sm text-red-400/80">Your AI provider account has run out of credits.</p>
                       <a
-                        href="https://fal.ai/dashboard/billing"
+                        href={project.provider === 'openai' ? "https://platform.openai.com/account/billing" : "https://fal.ai/dashboard/billing"}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-red-500/30 mt-1"
                       >
                         <CreditCard className="w-4 h-4" />
-                        Top up at fal.ai/dashboard/billing
+                        Top up billing
                       </a>
                     </div>
                   ) : (
@@ -328,7 +327,9 @@ export default async function ProjectDetail({ params }: { params: Promise<{ id: 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-400">Generation</span>
-                  <span className="font-medium text-blue-400">fal.ai FLUX</span>
+                  <span className="font-medium text-blue-400">
+                    {project.provider === 'openai' ? 'OpenAI DALL-E 3' : project.provider === 'gemini' ? 'Gemini Imagen' : 'fal.ai FLUX'}
+                  </span>
                 </div>
               </div>
             </div>
