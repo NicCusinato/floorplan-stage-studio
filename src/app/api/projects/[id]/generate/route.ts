@@ -18,9 +18,29 @@ const genAI = process.env.GEMINI_API_KEY
   : null;
 
 // ── Analyze floor plan with Gemini Vision ─────────────────────────────────────
-async function analyzeFloorPlan(imagePath: string): Promise<{
+async function analyzeFloorPlan(imagePath: string, designStyle?: string): Promise<{
   totalSqft: number;
-  rooms: Array<{ name: string; sqft: number; features: string[]; cameraAngle?: string }>;
+  global_style_narrative: string;
+  design_bible: {
+    flooring: string;
+    walls: string;
+    trim: string;
+    hardware: string;
+    lighting: string;
+  };
+  rooms: Array<{
+    name: string;
+    sqft: number;
+    features: string[];
+    spatial_layout: string;
+    furniture_scale: string;
+    camera_alignment: string;
+    appliance_layout: string;
+    fixed_fixtures_layout: string;
+    adjacent_openings: string;
+    visible_adjacent_context: string;
+    cameraAngle?: string;
+  }>;
 }> {
   if (!genAI) throw new Error("GEMINI_API_KEY not set — needed to read floor plan labels");
 
@@ -31,9 +51,16 @@ async function analyzeFloorPlan(imagePath: string): Promise<{
 
   const visionModel = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-3.5-flash" });
 
-  const prompt = `You are analyzing a real estate floor plan image.
+  const prompt = `You are analyzing a real estate floor plan image. The user has chosen the target design style: "${designStyle || "modern scandinavian"}".
 
 Identify every labeled room or space visible in the floor plan.
+
+Develop a strict, cohesive "design_bible" specification mapping out exact textures, materials, and colors that will apply UNIFORMLY to the ENTIRE house. This must perfectly match the chosen design style:
+- flooring: specific wood species, plank size, stain, and sheen (e.g. "Natural 6-inch Light Honey Oak Hardwood, satin finish")
+- walls: specific paint color name and sheen (e.g. "Sherwin Williams Alabaster White, flat finish")
+- trim: flat baseboard trim color and height (e.g. "4-inch flat white baseboards, satin finish")
+- hardware: unified light fixture and handle metal finish (e.g. "matte black handles and brushed brass lighting accents")
+- lighting: unified natural daylight warmth (e.g. "3000K warm afternoon daylight streaming from exterior windows, soft architectural fill light")
 
 For each room, extract:
 - name: the exact label as it appears (e.g. "BEDROOM", "KITCHEN", "LIVING ROOM", "DEN", "BATHROOM")
@@ -55,7 +82,7 @@ The floor plan may include:
 - Dimensions in feet or meters
 
 Return ONLY valid JSON with no markdown, no code blocks, no explanation:
-{"totalSqft":840,"global_style_narrative":"A cohesive design summary of the entire house...","rooms":[{"name":"BEDROOM","sqft":171,"features":["window","closet","bed"],"spatial_layout":"Square room with window on north wall","furniture_scale":"Medium room, fits Queen bed","camera_alignment":"Camera positioned at East door looking West","appliance_layout":"","fixed_fixtures_layout":"","adjacent_openings":"","visible_adjacent_context":""}]}`;
+{"totalSqft":840,"global_style_narrative":"A cohesive design summary of the entire house...","design_bible":{"flooring":"...","walls":"...","trim":"...","hardware":"...","lighting":"..."},"rooms":[{"name":"BEDROOM","sqft":171,"features":["window","closet","bed"],"spatial_layout":"Square room with window on north wall","furniture_scale":"Medium room, fits Queen bed","camera_alignment":"Camera positioned at East door looking West","appliance_layout":"","fixed_fixtures_layout":"","adjacent_openings":"","visible_adjacent_context":""}]}`;
 
   const result = await visionModel.generateContent([
     prompt,
@@ -73,6 +100,101 @@ Return ONLY valid JSON with no markdown, no code blocks, no explanation:
     const match = text.match(/\{[\s\S]*\}/);
     if (match) return JSON.parse(match[0]);
     throw new Error(`Could not parse floor plan analysis: ${text.substring(0, 200)}`);
+  }
+}
+
+// ── Call OpenAI GPT-4o with floorplan image + context to generate a highly accurate room prompt ──
+async function generateMultimodalRoomPrompt(
+  floorplanPath: string,
+  roomName: string,
+  room: any,
+  designBible: any,
+  previousRoomsContext: string
+): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.warn("[generate] OPENAI_API_KEY not set - skipping multimodal prompting");
+    return "";
+  }
+
+  const fullPath = path.join(process.cwd(), floorplanPath);
+  if (!fs.existsSync(fullPath)) {
+    console.warn(`[generate] Floorplan image not found: ${fullPath}`);
+    return "";
+  }
+
+  const imageData = fs.readFileSync(fullPath);
+  const base64Image = imageData.toString("base64");
+  const mimeType = floorplanPath.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
+
+  const promptText = `You are an expert AI staging photographer and prompt engineer.
+You are staging the room: "${roomName}" (${room.sqft} sqft).
+
+Look at the attached 2D floorplan image, locate the "${roomName}", and see where the entry doors, windows, and adjacent rooms are.
+
+Target Design Bible for the entire home (ensure exact match):
+- Flooring: ${designBible.flooring || "Oak wood flooring"}
+- Walls: ${designBible.walls || "Warm white walls"}
+- Trim: ${designBible.trim || "Flat white baseboards"}
+- Hardware: ${designBible.hardware || "Matte black hardware"}
+- Lighting: ${designBible.lighting || "3000K warm daylight"}
+
+Existing rooms already generated in this home for visual context (ensure matching flooring, style, and transitions):
+${previousRoomsContext || "No rooms generated yet."}
+
+Room details from floorplan analysis:
+- Spatial Layout: ${room.spatial_layout}
+- Furniture Scale: ${room.furniture_scale}
+- Camera Alignment: ${room.camera_alignment}
+- Appliance Layout: ${room.appliance_layout}
+- Fixed Fixtures Layout: ${room.fixed_fixtures_layout}
+- Adjacent Openings: ${room.adjacent_openings}
+
+Write a highly detailed, photorealistic 3D interior photography text prompt for a diffusion model (like Flux or DALL-E) to generate the staged "${roomName}".
+Adhere strictly to:
+1. The exact flooring, wall paint, lighting, and hardware from the Design Bible.
+2. The exact camera perspective (usually standing at the doorway looking inward).
+3. Placing the furniture, appliances, and permanent fixtures in the exact locations described.
+4. Ensuring that any visible openings leading to adjacent rooms match the styles and visual descriptions of already-generated rooms.
+5. Do not include any meta-text, markdown, formatting, or introductory phrases. Return ONLY the direct prompt string (under 180 words).`;
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: promptText },
+              {
+                type: "image_url",
+                image_url: { url: `data:${mimeType};base64,${base64Image}` },
+              },
+            ],
+          },
+        ],
+        max_tokens: 400,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.warn(`[generate] OpenAI GPT-4o prompting API error: ${response.status} - ${err}`);
+      return "";
+    }
+
+    const data = await response.json();
+    const resultText = data.choices?.[0]?.message?.content?.trim();
+    return resultText || "";
+  } catch (error) {
+    console.warn("[generate] Multimodal room prompting failed:", error);
+    return "";
   }
 }
 
@@ -103,10 +225,10 @@ async function processGeneration(
       roomState.generationMode = mode;
     } else {
       console.log(`[generate] Analyzing floor plan: ${floorplanPath}`);
-      const analysis = await analyzeFloorPlan(floorplanPath);
+      const analysis = await analyzeFloorPlan(floorplanPath, project?.designStyle || undefined);
       console.log(`[generate] Found ${analysis.rooms.length} rooms, ${analysis.totalSqft} sqft`);
 
-      const defaultStyle = "modern scandinavian";
+      const defaultStyle = project?.designStyle || "modern scandinavian";
       const defaultWallColor = "warm white";
       const defaultFloor = "light oak hardwood";
 
@@ -116,6 +238,13 @@ async function processGeneration(
         globalWallColor: defaultWallColor,
         globalFloorMaterial: defaultFloor,
         generationMode: mode,
+        designBible: analysis.design_bible || {
+          flooring: defaultFloor,
+          walls: defaultWallColor,
+          trim: "4-inch flat white baseboards, satin finish",
+          hardware: "matte black handles and light fixtures",
+          lighting: "3000K warm daylight streaming from windows"
+        },
         rooms: analysis.rooms.map((r: any) => ({
           name: r.name,
           sqft: r.sqft,
@@ -140,15 +269,23 @@ async function processGeneration(
         where: { id: projectId },
         data: { roomStateJson: JSON.stringify(roomState), status: "staging" },
       });
-    }
-
-    // ── Step 3: Generate one photo per stageable room ──────────────────────
-    const outputDir = path.join(process.cwd(), "storage", "renders", projectId);
-    fs.mkdirSync(outputDir, { recursive: true });
-
     const stageableRooms = roomState.rooms.filter(
       (r: any) => !SKIP_ROOMS.has(r.name.toUpperCase().trim())
     );
+
+    // Prioritize main living spaces so sequential generation builds a logical style context
+    const roomPriority = [
+      "FOYER", "ENTRY", "HALLWAY", 
+      "LIVING ROOM", "LIVINGROOM", "LIVING", 
+      "DINING ROOM", "DININGROOM", "DINING AREA", "DINING", 
+      "KITCHEN", "BEDROOM", "DEN", "STUDIO", "OFFICE"
+    ];
+    const getPriority = (name: string) => {
+      const upper = name.toUpperCase().trim();
+      const idx = roomPriority.findIndex(p => upper.includes(p));
+      return idx === -1 ? 99 : idx;
+    };
+    stageableRooms.sort((a: any, b: any) => getPriority(a.name) - getPriority(b.name));
 
     const providerName = project?.provider || "openai";
     console.log(
@@ -156,6 +293,7 @@ async function processGeneration(
     );
 
     let lastError: string | null = null;
+    const previousRooms: Array<{ name: string; promptUsed: string }> = [];
 
     // Compute a deterministic seed from projectId for consistent latent noise/flooring texture across rooms
     let projectSeed = 0;
@@ -170,12 +308,29 @@ async function processGeneration(
       console.log(`[generate] → ${room.name} (${room.sqft} sqft)`);
 
       try {
-        const prompt = buildRoomPrompt(
-          room.name, room.sqft, room.features,
-          room.style, room.wallColor, room.floorMaterial, room.cameraAngle,
-          room.spatial_layout, room.furniture_scale, room.camera_alignment, room.appliance_layout,
-          room.adjacent_openings, room.fixed_fixtures_layout
+        const previousRoomsContext = previousRooms
+          .map((r) => `- Room: ${r.name}\n  Staging prompt used: ${r.promptUsed}`)
+          .join("\n\n");
+
+        let prompt = await generateMultimodalRoomPrompt(
+          floorplanPath,
+          room.name,
+          room,
+          roomState.designBible || {},
+          previousRoomsContext
         );
+
+        if (!prompt) {
+          console.log(`[generate] Multimodal prompting returned empty for ${room.name}, falling back to buildRoomPrompt`);
+          prompt = buildRoomPrompt(
+            room.name, room.sqft, room.features,
+            room.style, room.wallColor, room.floorMaterial, room.cameraAngle,
+            room.spatial_layout, room.furniture_scale, room.camera_alignment, room.appliance_layout,
+            room.adjacent_openings, room.fixed_fixtures_layout
+          );
+        } else {
+          console.log(`[generate] Spatially chained prompt for ${room.name}: "${prompt.substring(0, 120)}..."`);
+        }
 
         const engine = getStagingEngine();
 
@@ -229,10 +384,10 @@ async function processGeneration(
 
         if (!room.stagedPhotoPaths) room.stagedPhotoPaths = [];
         room.stagedPhotoPaths.push(relativePath);
+        previousRooms.push({ name: room.name, promptUsed: prompt });
         console.log(`[generate] ✓ ${room.name} saved`);
       } catch (roomErr: any) {
         lastError = roomErr?.message ?? String(roomErr);
-        console.error(`[generate] Image gen failed for ${room.name}: ${lastError}`);
       }
     }
 
