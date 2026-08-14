@@ -27,7 +27,7 @@ export async function POST(
     const timestamp = Date.now();
     const filename = `${projectId}_${timestamp}_${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
     const relativePath = `storage/uploads/${filename}`;
-    const fullPath = path.join(process.cwd(), relativePath);
+    const fullPath = path.join(/*turbopackIgnore: true*/ process.cwd(), relativePath);
 
     // Ensure the directory exists before writing
     fs.mkdirSync(path.dirname(fullPath), { recursive: true });

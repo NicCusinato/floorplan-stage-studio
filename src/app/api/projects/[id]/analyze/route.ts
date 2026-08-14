@@ -32,7 +32,7 @@ export async function POST(
     }
 
     // Read floorplan image
-    const fullPath = path.join(process.cwd(), floorplanAsset.path);
+    const fullPath = path.join(/*turbopackIgnore: true*/ process.cwd(), floorplanAsset.path);
     if (!fs.existsSync(fullPath)) {
       return NextResponse.json({ error: "Floorplan file not found on disk" }, { status: 404 });
     }

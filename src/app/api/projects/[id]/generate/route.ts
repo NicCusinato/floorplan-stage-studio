@@ -44,7 +44,7 @@ async function analyzeFloorPlan(imagePath: string, designStyle?: string): Promis
 }> {
   if (!genAI) throw new Error("GEMINI_API_KEY not set — needed to read floor plan labels");
 
-  const fullPath = path.join(process.cwd(), imagePath);
+  const fullPath = path.join(/*turbopackIgnore: true*/ process.cwd(), imagePath);
   const imageData = fs.readFileSync(fullPath);
   const base64Image = imageData.toString("base64");
   const mimeType = imagePath.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
@@ -117,7 +117,7 @@ async function generateMultimodalRoomPrompt(
     return "";
   }
 
-  const fullPath = path.join(process.cwd(), floorplanPath);
+  const fullPath = path.join(/*turbopackIgnore: true*/ process.cwd(), floorplanPath);
   if (!fs.existsSync(fullPath)) {
     console.warn(`[generate] Floorplan image not found: ${fullPath}`);
     return "";
@@ -269,6 +269,7 @@ async function processGeneration(
         where: { id: projectId },
         data: { roomStateJson: JSON.stringify(roomState), status: "staging" },
       });
+    }
     const stageableRooms = roomState.rooms.filter(
       (r: any) => !SKIP_ROOMS.has(r.name.toUpperCase().trim())
     );

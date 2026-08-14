@@ -50,13 +50,13 @@ export async function DELETE(
     // Remove asset files from disk
     for (const asset of project.assets) {
       try {
-        const fullPath = path.join(process.cwd(), asset.path);
+        const fullPath = path.join(/*turbopackIgnore: true*/ process.cwd(), asset.path);
         if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
       } catch {}
     }
     // Remove the renders folder
     try {
-      const rendersDir = path.join(process.cwd(), "storage", "renders", id);
+      const rendersDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "storage", "renders", id);
       if (fs.existsSync(rendersDir)) fs.rmSync(rendersDir, { recursive: true, force: true });
     } catch {}
 

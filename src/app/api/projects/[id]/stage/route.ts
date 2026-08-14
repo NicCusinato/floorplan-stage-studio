@@ -66,13 +66,13 @@ export async function POST(
       );
     }
 
-    const outputDir = path.join(process.cwd(), "storage", "renders", id);
+    const outputDir = path.join(/*turbopackIgnore: true*/ process.cwd(), "storage", "renders", id);
     fs.mkdirSync(outputDir, { recursive: true });
 
     const newAssets = [];
 
     for (const asset of targetAssets) {
-      const localPath = path.join(process.cwd(), asset.path);
+      const localPath = path.join(/*turbopackIgnore: true*/ process.cwd(), asset.path);
       if (!fs.existsSync(localPath)) {
         console.warn(`[stage] File not found: ${localPath}`);
         continue;
